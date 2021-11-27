@@ -3,8 +3,12 @@
 let { Blockchain } = require('spartan-gold');
 
 const VOTE_WINNER = 'VOTE_WINNER';
+const START_VOTING = 'START_VOTING';
 
 module.exports = class ReputationBlockchain extends Blockchain {
+
+    static get VOTE_WINNER() { return VOTE_WINNER; }
+    static get START_VOTING() { return START_VOTING; }
 
     static makeGenesis({
         blockClass,
