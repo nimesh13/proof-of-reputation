@@ -16,10 +16,6 @@ module.exports = class ReputationClient extends Client {
     this.identity = identityCount;
     identityCount += 1;
 
-    // Setting up listeners to receive messages from other clients.
-    this.on(ReputationBlockchain.VOTE_WINNER, this.receiveVote);
-    // this.on(Blockchain.MISSING_BLOCK, this.provideMissingBlock);
-
   }
 
   get reputationScore() {
@@ -37,15 +33,17 @@ module.exports = class ReputationClient extends Client {
 
     this.startNewSearch();
 
-    // this.on(ReputationBlockchain.START_MINING, this.findProof);
-    // // this.on(ReputationBlockchain.POST_TRANSACTION, this.addTransaction);
+    this.on(ReputationBlockchain.START_VOTING, this.voteWinner);
+    this.on(ReputationBlockchain.VOTE_WINNER, this.receiveVote);
 
-    // setTimeout(() => this.emit(ReputationBlockchain.START_MINING), 0);
+    setTimeout(() => this.emit(ReputationBlockchain.START_VOTING), 0);
   }
 
   startNewSearch() {
     this.currentBlock = ReputationBlockchain.makeBlock(this.address, this.lastBlock);
+  }
 
+  voteWinner() {
     this.numPlayers = this.lastConfirmedBlock.reputations.size;
 
     let number = rand.nextInt(this.numPlayers);
@@ -53,31 +51,11 @@ module.exports = class ReputationClient extends Client {
     this.announceProof({ id: this.address, vote: number });
   }
 
-  findProof(oneAndDone = false) {
-
-    let pausePoint = this.currentBlock.proof + this.miningRounds;
-
-    while (this.currentBlock.proof < pausePoint) {
-      if (this.currentBlock.hasValidProof()) {
-        this.log(`found proof for block ${this.currentBlock.chainLength}: ${this.currentBlock.proof}`);
-        this.announceProof();
-        // Note: calling receiveBlock triggers a new search.
-        this.receiveBlock(this.currentBlock);
-        break;
-      }
-      this.currentBlock.proof++;
-    }
-    // If we are testing, don't continue the search.
-    if (!oneAndDone) {
-      // Check if anyone has found a block, and then return to mining.
-      setTimeout(() => this.emit(ReputationBlockchain.START_MINING), 0);
-    }
-  }
-
   /**
    * Broadcast the block, with a valid proof included.
    */
   announceProof(msg) {
+    // console.log('Message: ', msg);
     this.net.broadcast(ReputationBlockchain.VOTE_WINNER, msg);
   }
 
@@ -97,7 +75,7 @@ module.exports = class ReputationClient extends Client {
     });
     let winnerID = sum % this.numPlayers;
     this.currentBlock.winner = this.getWinnerName(winnerID);
-    
+
     console.log(`${this.name} announces ${this.currentBlock.winner} as the winner`);
   }
 
