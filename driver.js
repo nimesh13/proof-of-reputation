@@ -23,9 +23,9 @@ let clientArray = [alice, bob, charlie];
 let genesis = ReputationBlockchain.makeGenesis({
   blockClass: ReputationBlock,
   clientReputationMap: new Map([
-    [alice, 10],
-    [bob, 10],
-    [charlie, 10]
+    [alice, 100],
+    [bob, 100],
+    [charlie, 100]
   ]),
 });
 
@@ -49,36 +49,13 @@ fakeNet.register(alice, bob, charlie);
 
 clientArray.forEach(client => {
   client.initialize();
-})
-// alice.initialize();
+});
 
-// alice.net.broadcast(ReputationBlockchain.PROOF_FOUND, alice.currentBlock);
+// Print out the final balances after it has been running for some time.
+setTimeout(() => {
+  console.log();
+  showBalances(alice);
 
-// // Miners start mining.
-// minnie.initialize();
-// mickey.initialize();
-
-// // Alice transfers some money to Bob.
-// let addr = ulysses.createAddress();
-// console.log();
-// console.log(`***Alice is transferring 40 gold to Ulysses at address ${addr}`);
-// console.log();
-// alice.postTransaction([{ amount: 40, address: addr }]);
-
-// setTimeout(() => {
-//   let addr = ulysses.createAddress();
-//   console.log();
-//   console.log(`***Alice is transferring 30 gold to Ulysses at address ${addr}`);
-//   console.log();
-//   alice.postTransaction([{ amount: 30, address: addr }]);
-// }, 2000);
-
-
-// // Print out the final balances after it has been running for some time.
-// setTimeout(() => {
-//   console.log();
-//   showBalances(alice);
-
-//   process.exit(0);
-// }, 5000);
+  process.exit(0);
+}, 1000);
 
