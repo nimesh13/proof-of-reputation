@@ -9,14 +9,14 @@ module.exports = class ReputationBlock extends Block {
 
       this.prevBlockHash = prevBlock ? prevBlock.hashVal() : null;
 
-      super.reputations = prevBlock ? new Map(prevBlock.reputations) : new Map();
-      super.voteWinnerMap = new Map();
-      super.winner = '';
-      super.votesMap = new Map();
-      super.decision = '';
+      this.reputations = prevBlock ? new Map(prevBlock.reputations) : new Map();
+      this.voteWinnerMap = new Map();
+      this.winner = '';
+      this.votesMap = new Map();
+      this.decision = '';
    }
 
-   balanceOf(addr) {
+   reputationOf(addr) {
       return this.reputations.get(addr) || 0;
    }
 
