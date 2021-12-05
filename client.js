@@ -5,6 +5,7 @@ let { Client } = require('spartan-gold');
 let ReputationBlockchain = require('./blockchain.js');
 let crypto = require('crypto');
 let rand = require('./rand');
+const { finished } = require('stream');
 
 const HASH_ALG = "SHA256";
 let identityCount = 0;
@@ -60,23 +61,28 @@ module.exports = class ReputationClient extends Client {
   //   this.announceVote({ id: this.address, vote: number });
   // }
 
-  commitVote() {
-    this.numPlayers = this.currentBlock.reputations.size;
-    let number = rand.nextInt(this.numPlayers);
+  async commitVote() {
+    //this.numPlayers = this.currentBlock.reputations.size;
+    this.numPlayers = 0;
+    let number = crypto.randomBytes(4).readUInt32BE(0, true);
+
     this.chosenNumber = number;
     this.committedVotes = {};
 
     let hashed = crypto.createHash(HASH_ALG).update(number.toString()).digest('hex');
-    let nonce = crypto.randomBytes(48).toString('hex');
+    let nonce = crypto.randomBytes(2).toString('hex');
     this.nonce = nonce;
 
     this.net.broadcast(ReputationBlockchain.COMMIT_VOTE, { id: this.address, hashedVote: hashed+nonce});
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    this.announceVote();
   }
   handleCommit(o){
+    this.numPlayers++;
     this.committedVotes[o.id] = o.hashedVote;
-    if (Object.keys(this.committedVotes).length === this.numPlayers){
-      this.announceVote();
-    }
+    // if (Object.keys(this.committedVotes).length === this.numPlayers){
+    //   this.announceVote();
+    // }
   }
   /**
    * Broadcast the block, with a valid proof included.
@@ -87,6 +93,7 @@ module.exports = class ReputationClient extends Client {
   }
 
   receiveVote(o) {
+    console.log(o);
     this.announcedVotes[o.id] = [o.vote, o.nonce];
     if (Object.keys(this.announcedVotes).length === this.numPlayers){
       this.determineWinner();
@@ -122,6 +129,8 @@ module.exports = class ReputationClient extends Client {
     for (let id in this.announcedVotes){
       let committed = this.committedVotes[id];
 
+      console.log(this.announcedVotes[id]);
+      
       let num = this.announcedVotes[id][0];
       let nonce = this.announcedVotes[id][1]; 
       let hashed = crypto.createHash(HASH_ALG).update(num.toString()).digest('hex');
