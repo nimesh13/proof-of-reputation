@@ -18,6 +18,7 @@ module.exports = class ReputationClient extends Client {
 
     this.identity = identityCount;
     identityCount += 1;
+    this.numPlayers = 0;
 
     this.on(ReputationBlockchain.START_VOTING, this.commitVote);
     this.on(ReputationBlockchain.COMMIT_VOTE, this.handleCommit);
@@ -47,7 +48,8 @@ module.exports = class ReputationClient extends Client {
   startNewSearch() {
 
     this.currentBlock = ReputationBlockchain.makeBlock(this.address, this.lastConfirmedBlock);
-    this.numPlayers = this.currentBlock.reputations.size;
+    this.numPlayers = 0;
+    // this.numPlayers = this.currentBlock.reputations.size;
   }
 
   // voteWinner() {
@@ -60,7 +62,6 @@ module.exports = class ReputationClient extends Client {
 
   async commitVote() {
     
-    // this.numPlayers = 0;
     let number = crypto.randomBytes(4).readUInt32BE(0, true);
 
     this.chosenNumber = number;
@@ -74,7 +75,7 @@ module.exports = class ReputationClient extends Client {
     this.announceVote();
   }
   handleCommit(o) {
-    // this.numPlayers++;
+    this.numPlayers++;
     this.currentBlock.committedVotes[o.id] = o.hashedVote;
     // if (Object.keys(this.currentBlock.committedVotes).length === this.numPlayers){
     //   this.announceVote();
