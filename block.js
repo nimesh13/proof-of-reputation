@@ -14,6 +14,8 @@ module.exports = class ReputationBlock extends Block {
       this.winner = '';
       this.votesMap = new Map();
       this.decision = '';
+      this.announcedVotes = {};
+      this.committedVotes = {};
    }
 
    reputationOf(addr) {
