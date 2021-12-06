@@ -3,9 +3,11 @@
 let { Client } = require('spartan-gold');
 
 let ReputationBlockchain = require('./blockchain.js');
-
+let crypto = require('crypto');
 let rand = require('./rand');
+const { finished } = require('stream');
 
+const HASH_ALG = "SHA256";
 let identityCount = 0;
 let numRounds = 0;
 
@@ -17,11 +19,11 @@ module.exports = class ReputationClient extends Client {
     this.identity = identityCount;
     identityCount += 1;
 
-    this.on(ReputationBlockchain.START_VOTING, this.voteWinner);
+    this.on(ReputationBlockchain.START_VOTING, this.commitVote);
+    this.on(ReputationBlockchain.COMMIT_VOTE, this.handleCommit);
     this.on(ReputationBlockchain.VOTE_WINNER, this.receiveVote);
     this.on(ReputationBlockchain.PROOF_FOUND1, this.receiveProof);
     this.on(ReputationBlockchain.VOTE_BLOCK, this.receiveVoteBlock);
-
   }
 
   get reputationScore() {
@@ -47,30 +49,62 @@ module.exports = class ReputationClient extends Client {
     this.currentBlock = ReputationBlockchain.makeBlock(this.address, this.lastConfirmedBlock);
   }
 
-  voteWinner() {
-    this.numPlayers = this.currentBlock.reputations.size;
+  // voteWinner() {
+  //   this.numPlayers = this.currentBlock.reputations.size;
 
-    let number = rand.nextInt(this.numPlayers);
+  //   let number = rand.nextInt(this.numPlayers);
+    
+  //   this.announceVote({ id: this.address, vote: number });
+  // }
 
-    this.announceVote({ id: this.address, vote: number });
+  async commitVote() {
+    //this.numPlayers = this.currentBlock.reputations.size;
+    this.numPlayers = 0;
+    let number = crypto.randomBytes(4).readUInt32BE(0, true);
+
+    this.chosenNumber = number;
+    this.committedVotes = {};
+
+    let hashed = crypto.createHash(HASH_ALG).update(number.toString()).digest('hex');
+    let nonce = crypto.randomBytes(2).toString('hex');
+    this.nonce = nonce;
+
+    this.net.broadcast(ReputationBlockchain.COMMIT_VOTE, { id: this.address, hashedVote: hashed+nonce});
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    this.announceVote();
   }
-
+  handleCommit(o){
+    this.numPlayers++;
+    this.committedVotes[o.id] = o.hashedVote;
+    // if (Object.keys(this.committedVotes).length === this.numPlayers){
+    //   this.announceVote();
+    // }
+  }
   /**
    * Broadcast the block, with a valid proof included.
    */
-  announceVote(msg) {
-    this.net.broadcast(ReputationBlockchain.VOTE_WINNER, msg);
+  announceVote() {
+    this.announcedVotes = {};
+    this.net.broadcast(ReputationBlockchain.VOTE_WINNER, {id: this.address, vote: this.chosenNumber, nonce: this.nonce});
   }
 
-  receiveVote(msg) {
-    this.currentBlock.voteWinnerMap.set(msg.id, msg.vote);
-
-    if (this.currentBlock.voteWinnerMap.size === this.numPlayers) {
+  receiveVote(o) {
+    console.log(o);
+    this.announcedVotes[o.id] = [o.vote, o.nonce];
+    if (Object.keys(this.announcedVotes).length === this.numPlayers){
       this.determineWinner();
       if (this.currentBlock.winner === this.address) {
         this.announceProof();
       }
     }
+    //this.currentBlock.voteWinnerMap.set(msg.id, msg.vote);
+
+    // if (this.currentBlock.voteWinnerMap.size === this.numPlayers) {
+    //   this.determineWinner();
+    //   if (this.currentBlock.winner === this.address) {
+    //     this.announceProof();
+    //   }
+    // }
   }
 
   announceProof() {
@@ -79,11 +113,34 @@ module.exports = class ReputationClient extends Client {
   }
 
   determineWinner() {
+    //let sum = 0;
+    //let voteMap = this.currentBlock.voteWinnerMap;
+    // voteMap.forEach((share) => {
+    //   sum += share;
+    // });
+    
     let sum = 0;
-    let voteMap = this.currentBlock.voteWinnerMap;
-    voteMap.forEach((share) => {
-      sum += share;
-    });
+
+    // check for cheaters
+    for (let id in this.announcedVotes){
+      let committed = this.committedVotes[id];
+
+      console.log(this.announcedVotes[id]);
+      
+      let num = this.announcedVotes[id][0];
+      let nonce = this.announcedVotes[id][1]; 
+      let hashed = crypto.createHash(HASH_ALG).update(num.toString()).digest('hex');
+
+      if (hashed+nonce !== committed){
+        console.log(`${id} is invalid`);
+        // don't add to sum
+      }
+      else {
+        // valid vote, so add to sum
+        sum += num;
+      }
+    }
+
     let winnerID = sum % this.numPlayers;
     this.currentBlock.winner = this.getClientName(winnerID);
 
