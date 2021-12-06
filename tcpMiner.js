@@ -23,7 +23,7 @@ class TcpNet extends FakeNet {
         let clientConnection = net.connect(client.connection, () => {
             clientConnection.write(JSON.stringify(data));
         });
-        clientConnection.on('error', () => {
+        clientConnection.on('error', (err) => {
             console.log("Connection closed! Termination miner....");
             return;
         });
@@ -153,7 +153,7 @@ setTimeout(() => {
     console.log();
     
     process.exit(0);
-}, 30000);
+}, 60000);
 
 function showBalances(client) {
     console.log();

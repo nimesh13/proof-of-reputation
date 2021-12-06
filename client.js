@@ -60,21 +60,21 @@ module.exports = class ReputationClient extends Client {
 
   async commitVote() {
     
-    // this.numPlayers = 0;
+    this.numPlayers = 0;
     let number = crypto.randomBytes(4).readUInt32BE(0, true);
 
     this.chosenNumber = number;
+    let nonce = crypto.randomBytes(4).toString('hex');
 
-    let hashed = crypto.createHash(HASH_ALG).update(number.toString()).digest('hex');
-    let nonce = crypto.randomBytes(2).toString('hex');
+    let hashed = crypto.createHash(HASH_ALG).update(number.toString() + nonce.toString()).digest('hex');
     this.nonce = nonce;
 
-    this.net.broadcast(ReputationBlockchain.COMMIT_VOTE, { id: this.address, hashedVote: hashed + nonce });
+    this.net.broadcast(ReputationBlockchain.COMMIT_VOTE, { id: this.address, hashedVote: hashed });
     await new Promise(resolve => setTimeout(resolve, 3000));
     this.announceVote();
   }
   handleCommit(o) {
-    // this.numPlayers++;
+    this.numPlayers++;
     this.currentBlock.committedVotes[o.id] = o.hashedVote;
     // if (Object.keys(this.currentBlock.committedVotes).length === this.numPlayers){
     //   this.announceVote();
@@ -128,9 +128,9 @@ module.exports = class ReputationClient extends Client {
 
       let num = this.currentBlock.announcedVotes[id][0];
       let nonce = this.currentBlock.announcedVotes[id][1];
-      let hashed = crypto.createHash(HASH_ALG).update(num.toString()).digest('hex');
+      let hashed = crypto.createHash(HASH_ALG).update(num.toString() + nonce.toString()).digest('hex');
 
-      if (hashed + nonce !== committed) {
+      if (hashed !== committed) {
         console.log(`${id} is invalid`);
         // don't add to sum
       }
