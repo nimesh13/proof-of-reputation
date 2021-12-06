@@ -133,6 +133,10 @@ module.exports = class ReputationClient extends Client {
       if (hashed !== committed) {
         console.log(`${id} is invalid`);
         // don't add to sum
+
+        let repValue = this.currentBlock.reputationOf(id);
+        repValue -= 10;
+        this.currentBlock.reputations.set(id, repValue);
       }
       else {
         // valid vote, so add to sum
@@ -171,7 +175,7 @@ module.exports = class ReputationClient extends Client {
     //add reputation class and getter to fetch the votes
 
     let num = rand.nextInt(4);
-    
+
     //25% success, 75% fail
     if (this.reputationScore < 80){
       if (num < 3) return 'INVALID';
