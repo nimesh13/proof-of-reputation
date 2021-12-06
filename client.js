@@ -60,8 +60,7 @@ module.exports = class ReputationClient extends Client {
   //   this.announceVote({ id: this.address, vote: number });
   // }
 
-  async commitVote() {
-    
+  async commitVote() { 
     let number = crypto.randomBytes(4).readUInt32BE(0, true);
 
     this.chosenNumber = number;
@@ -170,10 +169,27 @@ module.exports = class ReputationClient extends Client {
   calculateVote() {
 
     //add reputation class and getter to fetch the votes
-    let num = rand.nextInt(2);
 
-    if (num) return 'VALID';
-    return 'INVALID';
+    let num = rand.nextInt(4);
+    
+    //25% success, 75% fail
+    if (this.reputationScore < 80){
+      if (num < 3) return 'INVALID';
+      else return 'VALID';
+    }
+    //75% success, 25% fail
+    else if (this.reputationScore > 120){
+      if (num < 3) return 'VALID';
+      else return 'INVALID';
+    }
+    //50% chance each
+    else {
+      if (num < 2) return 'VALID';
+      else return 'INVALID';
+    }
+
+    // if (num) return 'VALID';
+    // return 'INVALID';
   }
 
   receiveVoteBlock(msg) {
