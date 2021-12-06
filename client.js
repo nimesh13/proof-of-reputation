@@ -47,36 +47,36 @@ module.exports = class ReputationClient extends Client {
   startNewSearch() {
 
     this.currentBlock = ReputationBlockchain.makeBlock(this.address, this.lastConfirmedBlock);
+    this.numPlayers = this.currentBlock.reputations.size;
   }
 
   // voteWinner() {
   //   this.numPlayers = this.currentBlock.reputations.size;
 
   //   let number = rand.nextInt(this.numPlayers);
-    
+
   //   this.announceVote({ id: this.address, vote: number });
   // }
 
   async commitVote() {
-    //this.numPlayers = this.currentBlock.reputations.size;
-    this.numPlayers = 0;
+    
+    // this.numPlayers = 0;
     let number = crypto.randomBytes(4).readUInt32BE(0, true);
 
     this.chosenNumber = number;
-    this.committedVotes = {};
 
     let hashed = crypto.createHash(HASH_ALG).update(number.toString()).digest('hex');
     let nonce = crypto.randomBytes(2).toString('hex');
     this.nonce = nonce;
 
-    this.net.broadcast(ReputationBlockchain.COMMIT_VOTE, { id: this.address, hashedVote: hashed+nonce});
+    this.net.broadcast(ReputationBlockchain.COMMIT_VOTE, { id: this.address, hashedVote: hashed + nonce });
     await new Promise(resolve => setTimeout(resolve, 3000));
     this.announceVote();
   }
-  handleCommit(o){
-    this.numPlayers++;
-    this.committedVotes[o.id] = o.hashedVote;
-    // if (Object.keys(this.committedVotes).length === this.numPlayers){
+  handleCommit(o) {
+    // this.numPlayers++;
+    this.currentBlock.committedVotes[o.id] = o.hashedVote;
+    // if (Object.keys(this.currentBlock.committedVotes).length === this.numPlayers){
     //   this.announceVote();
     // }
   }
@@ -84,14 +84,13 @@ module.exports = class ReputationClient extends Client {
    * Broadcast the block, with a valid proof included.
    */
   announceVote() {
-    this.announcedVotes = {};
-    this.net.broadcast(ReputationBlockchain.VOTE_WINNER, {id: this.address, vote: this.chosenNumber, nonce: this.nonce});
+    this.net.broadcast(ReputationBlockchain.VOTE_WINNER, { id: this.address, vote: this.chosenNumber, nonce: this.nonce });
   }
 
   receiveVote(o) {
-    console.log(o);
-    this.announcedVotes[o.id] = [o.vote, o.nonce];
-    if (Object.keys(this.announcedVotes).length === this.numPlayers){
+    // console.log(o);
+    this.currentBlock.announcedVotes[o.id] = [o.vote, o.nonce];
+    if (Object.keys(this.currentBlock.announcedVotes).length === this.numPlayers) {
       this.determineWinner();
       if (this.currentBlock.winner === this.address) {
         this.announceProof();
@@ -118,20 +117,20 @@ module.exports = class ReputationClient extends Client {
     // voteMap.forEach((share) => {
     //   sum += share;
     // });
-    
+
     let sum = 0;
 
     // check for cheaters
-    for (let id in this.announcedVotes){
-      let committed = this.committedVotes[id];
+    for (let id in this.currentBlock.announcedVotes) {
+      let committed = this.currentBlock.committedVotes[id];
 
-      console.log(this.announcedVotes[id]);
-      
-      let num = this.announcedVotes[id][0];
-      let nonce = this.announcedVotes[id][1]; 
+      // console.log(this.currentBlock.announcedVotes[id]);
+
+      let num = this.currentBlock.announcedVotes[id][0];
+      let nonce = this.currentBlock.announcedVotes[id][1];
       let hashed = crypto.createHash(HASH_ALG).update(num.toString()).digest('hex');
 
-      if (hashed+nonce !== committed){
+      if (hashed + nonce !== committed) {
         console.log(`${id} is invalid`);
         // don't add to sum
       }
@@ -184,7 +183,7 @@ module.exports = class ReputationClient extends Client {
       this.currentBlock.decision = this.determineBlockStatus();
 
       this.updateReputation();
-      
+
       this.updateBlocks();
 
       this.initialize();
@@ -239,8 +238,8 @@ module.exports = class ReputationClient extends Client {
     // as the new currentBlock, and update the lastConfirmedBlock.
 
     if (this.lastBlock.chainLength < block.chainLength) {
-    this.lastBlock = block;
-    this.setLastConfirmed();
+      this.lastBlock = block;
+      this.setLastConfirmed();
     }
 
 
