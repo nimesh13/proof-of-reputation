@@ -138,21 +138,24 @@ minnie.srvr.listen(minnie.connection.port);
 // Register with known miners and begin mining.
 setTimeout(() => {
     console.log('\n----- Initial Balances -----');
+    console.log(`\nInitial reputation scores (${minnie.name}'s perspective)`);
     showBalances(minnie);
+    console.log();
     minnie.initializeMiners(knownMiners);
 }, 8000);
 
 // Print out the final balances after it has been running for some time.
 setTimeout(() => {
-    console.log('\n----- Final Balances ----- ');
+    console.log('\n----- Final Balances -----');
+    console.log(`\n${minnie.name}'s reputation score is ${minnie.reputationScore}.`);
+    console.log(`\nFinal reputation scores (${minnie.name}'s perspective)\n`);
     showBalances(minnie);
-
+    console.log();
+    
     process.exit(0);
 }, 30000);
 
 function showBalances(client) {
     console.log();
-    console.log(`Miner's reputation score is ${minnie.reputationScore}.\n`);
-
     client.showAllBalances();
 }
