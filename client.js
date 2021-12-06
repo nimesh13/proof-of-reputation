@@ -37,18 +37,14 @@ module.exports = class ReputationClient extends Client {
 
   initialize() {
 
-    // if (numRounds == 7) process.exit(0);
-
     this.startNewSearch();
 
-    setTimeout(() => this.emit(ReputationBlockchain.START_VOTING), 0);
+    setTimeout(() => this.emit(ReputationBlockchain.START_VOTING), 5000);
   }
 
   startNewSearch() {
 
     this.currentBlock = ReputationBlockchain.makeBlock(this.address, this.lastConfirmedBlock);
-    // if (numRounds === 5) console.log('Current block', this.currentBlock);
-    // console.log(this.name, 'Starting new search');
   }
 
   voteWinner() {
