@@ -1,0 +1,26 @@
+{
+  "name": "proof-of-reputation",
+  "version": "1.0.0",
+  "description": "Proof of Reputation based simulation of a blockchain.",
+  "main": "driver.js",
+  "scripts": {
+    "test": "node driver.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nimesh13/proof-of-reputation.git"
+  },
+  "keywords": [
+    "proof-of-reputation",
+    "spartan-gold"
+  ],
+  "author": "Nimesh, Ethan, Thomas Austin",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nimesh13/proof-of-reputation/issues"
+  },
+  "homepage": "https://github.com/jishavps/spartan-gold#readme",
+  "dependencies": {
+    "spartan-gold": "1.0.7"
+  }
+}
