@@ -5,11 +5,9 @@ let { Client } = require('spartan-gold');
 let ReputationBlockchain = require('./blockchain.js');
 let crypto = require('crypto');
 let rand = require('./rand');
-const { finished } = require('stream');
 
 const HASH_ALG = "SHA256";
 let identityCount = 0;
-let numRounds = 0;
 
 module.exports = class ReputationClient extends Client {
 
@@ -23,7 +21,7 @@ module.exports = class ReputationClient extends Client {
     this.on(ReputationBlockchain.START_VOTING, this.commitVote);
     this.on(ReputationBlockchain.COMMIT_VOTE, this.handleCommit);
     this.on(ReputationBlockchain.VOTE_WINNER, this.receiveVote);
-    this.on(ReputationBlockchain.PROOF_FOUND1, this.receiveProof);
+    this.on(ReputationBlockchain.FOUND_PROOF, this.receiveProof);
     this.on(ReputationBlockchain.VOTE_BLOCK, this.receiveVoteBlock);
   }
 
@@ -48,17 +46,9 @@ module.exports = class ReputationClient extends Client {
   startNewSearch() {
 
     this.currentBlock = ReputationBlockchain.makeBlock(this.address, this.lastConfirmedBlock);
+    console.log(`\n--- ${this.name}'s round ${this.currentBlock.chainLength} ---\n`, );
     this.numPlayers = 0;
-    // this.numPlayers = this.currentBlock.reputations.size;
   }
-
-  // voteWinner() {
-  //   this.numPlayers = this.currentBlock.reputations.size;
-
-  //   let number = rand.nextInt(this.numPlayers);
-
-  //   this.announceVote({ id: this.address, vote: number });
-  // }
 
   async commitVote() { 
     let number = crypto.randomBytes(4).readUInt32BE(0, true);
@@ -76,9 +66,6 @@ module.exports = class ReputationClient extends Client {
   handleCommit(o) {
     this.numPlayers++;
     this.currentBlock.committedVotes[o.id] = o.hashedVote;
-    // if (Object.keys(this.currentBlock.committedVotes).length === this.numPlayers){
-    //   this.announceVote();
-    // }
   }
   /**
    * Broadcast the block, with a valid proof included.
@@ -96,35 +83,20 @@ module.exports = class ReputationClient extends Client {
         this.announceProof();
       }
     }
-    //this.currentBlock.voteWinnerMap.set(msg.id, msg.vote);
-
-    // if (this.currentBlock.voteWinnerMap.size === this.numPlayers) {
-    //   this.determineWinner();
-    //   if (this.currentBlock.winner === this.address) {
-    //     this.announceProof();
-    //   }
-    // }
   }
 
   announceProof() {
     let msg = { proof: rand.nextInt(200) };
-    this.net.broadcast(ReputationBlockchain.PROOF_FOUND1, msg);
+    this.net.broadcast(ReputationBlockchain.FOUND_PROOF, msg);
   }
 
   determineWinner() {
-    //let sum = 0;
-    //let voteMap = this.currentBlock.voteWinnerMap;
-    // voteMap.forEach((share) => {
-    //   sum += share;
-    // });
 
     let sum = 0;
 
     // check for cheaters
     for (let id in this.currentBlock.announcedVotes) {
       let committed = this.currentBlock.committedVotes[id];
-
-      // console.log(this.currentBlock.announcedVotes[id]);
 
       let num = this.currentBlock.announcedVotes[id][0];
       let nonce = this.currentBlock.announcedVotes[id][1];
@@ -192,8 +164,6 @@ module.exports = class ReputationClient extends Client {
       else return 'INVALID';
     }
 
-    // if (num) return 'VALID';
-    // return 'INVALID';
   }
 
   receiveVoteBlock(msg) {

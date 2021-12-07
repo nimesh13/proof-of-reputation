@@ -5,7 +5,7 @@ let { Blockchain } = require('spartan-gold');
 const VOTE_WINNER = 'VOTE_WINNER';
 const COMMIT_VOTE = 'COMMIT_VOTE';
 const START_VOTING = 'START_VOTING';
-const PROOF_FOUND1 = 'PROOF_FOUND1';
+const FOUND_PROOF = 'FOUND_PROOF';
 const VOTE_BLOCK = 'VOTE_BLOCK';
 
 module.exports = class ReputationBlockchain extends Blockchain {
@@ -13,7 +13,7 @@ module.exports = class ReputationBlockchain extends Blockchain {
     static get VOTE_WINNER() { return VOTE_WINNER; }
     static get COMMIT_VOTE() { return COMMIT_VOTE; }
     static get START_VOTING() { return START_VOTING; }
-    static get PROOF_FOUND1() { return PROOF_FOUND1; }
+    static get FOUND_PROOF() { return FOUND_PROOF; }
     static get VOTE_BLOCK() { return VOTE_BLOCK; }
 
     static makeGenesis({

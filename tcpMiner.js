@@ -23,8 +23,8 @@ class TcpNet extends FakeNet {
         let clientConnection = net.connect(client.connection, () => {
             clientConnection.write(JSON.stringify(data));
         });
-        clientConnection.on('error', (err) => {
-            console.log("Connection closed! Termination miner....");
+        clientConnection.on('error', () => {
+            console.log("Connection closed! Terminating miner....");
             return;
         });
     }
@@ -120,6 +120,7 @@ let config = JSON.parse(readFileSync(process.argv[2]));
 let knownMiners = config.knownMiners || [];
 
 let startingReputation = config.genesis ? config.genesis.startingReputation : {};
+
 // Creating genesis block
 let genesis = ReputationBlockchain.makeGenesis({
     blockClass: ReputationBlock,
